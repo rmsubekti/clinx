@@ -32,27 +32,44 @@ server {
 		}
 }`
 
-const SERVERFILES string = "/usr/share/nginx/"
-const HOSTSFILE string = "/etc/hosts"
-const SITESAVAILABLE string = "/etc/nginx/sites-available/"
-const SITESENABLED string = "/etc/nginx/sites-enabled/"
-const LOCALIP string = "127.0.0.1"
+var usage string = `
+Usage:
+Create and update virtual host
+clinx -d=[local domain name] -f=[folder to serve]
+
+Delete virtual host
+clinx -r=[local domain name]
+`
+
+const (
+	SERVERFILES    string = "/usr/share/nginx/"
+	HOSTSFILE      string = "/etc/hosts"
+	SITESAVAILABLE string = "/etc/nginx/sites-available/"
+	SITESENABLED   string = "/etc/nginx/sites-enabled/"
+	LOCALIP        string = "127.0.0.1"
+)
 
 func main() {
 	d := flag.String("d", "", "-d domain name")
 	f := flag.String("f", "", "-f folder to be serve")
 	r := flag.String("r", "", "-r remove virtual host")
 	flag.Parse()
+	dEmpty := len(*d) < 1
+	fEmpty := len(*f) < 1
 
 	if len(*r) > 0 {
 		removeHost(*r)
 		os.Exit(0)
 	}
+	if dEmpty && fEmpty {
+		fmt.Println(usage)
+		os.Exit(0)
+	}
 
-	if len(*f) < 1 {
+	if fEmpty {
 		log.Fatal("please provide the name of the folder to be serve\n")
 	}
-	if len(*d) < 1 {
+	if dEmpty {
 		log.Fatal("domain name are required")
 	}
 

@@ -13,6 +13,6 @@ Just a tool for deploying local documentation server, it help me to configure vi
 
 ## Changed Directory/Files
 - /etc/hosts
-- /usr/share/nginx
-- /etc/nginx/sites-available
-- /etc/nginx/sites-enabled
+- /usr/share/nginx/
+- /etc/nginx/sites-available/
+- /etc/nginx/sites-enabled/
