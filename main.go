@@ -11,44 +11,6 @@ import (
 	"strings"
 )
 
-var config string = `
-##
-# Virtual Host configuration for example.com
-#
-# You can move that to a different file under sites-available/ and symlink that
-# to sites-enabled/ to enable it.
-#
-server {
-		listen 80;
-		listen [::]:80;
-
-		server_name example.com;
-
-		root /usr/share/nginx/example.com/html;
-		index index.html;
-
-		location / {
-				try_files $uri $uri/ =404;
-		}
-}`
-
-var usage string = `
-Usage:
-Create and update virtual host
-clinx -d=[local domain name] -f=[folder to serve]
-
-Delete virtual host
-clinx -r=[local domain name]
-`
-
-const (
-	SERVERFILES    string = "/usr/share/nginx/"
-	HOSTSFILE      string = "/etc/hosts"
-	SITESAVAILABLE string = "/etc/nginx/sites-available/"
-	SITESENABLED   string = "/etc/nginx/sites-enabled/"
-	LOCALIP        string = "127.0.0.1"
-)
-
 func main() {
 	d := flag.String("d", "", "-d domain name")
 	f := flag.String("f", "", "-f folder to be serve")
@@ -76,7 +38,9 @@ func main() {
 	if err := createServerDir(*d, *f); err != nil {
 		log.Fatal(err)
 	}
-	createVirtualConfig(*d)
+	if err := createVirtualConfig(*d); err != nil {
+		log.Fatal(err)
+	}
 	setupHostConfig(*d)
 	restartNginx()
 
@@ -94,7 +58,7 @@ func restartNginx() {
 }
 
 func createServerDir(domain, folder string) (err error) {
-	domain = SERVERFILES + domain
+	domain = SERVER_FILES + domain
 	_, exist := isExist(domain)
 	if exist {
 		fmt.Println("Updating server directory :" + domain)
@@ -124,8 +88,8 @@ func createServerDir(domain, folder string) (err error) {
 
 func createVirtualConfig(domain string) error {
 	configName := domain + ".conf"
-	available := SITESAVAILABLE + configName
-	enabled := SITESENABLED + configName
+	available := SITES_AVAILABLE + configName
+	enabled := SITES_ENABLED + configName
 	config = strings.ReplaceAll(config, "example.com", domain)
 
 	if _, exist := isExist(available); !exist {
@@ -148,9 +112,9 @@ func createVirtualConfig(domain string) error {
 	return nil
 }
 func setupHostConfig(domain string) {
-	data, _ := ioutil.ReadFile(HOSTSFILE)
+	data, _ := ioutil.ReadFile(HOSTS_FILE)
 	comment := "# virtual hosts added by clinx"
-	host := LOCALIP + "\t" + domain
+	host := LOCAL_IP + "\t" + domain
 	commented := false
 	commentLine := 0
 	hostAdded := false
@@ -179,7 +143,7 @@ func setupHostConfig(domain string) {
 			stringN = append(texts, stringN[commentLine+1:]...)
 		}
 		dataToWrite := strings.Join(stringN, "\n")
-		ioutil.WriteFile(HOSTSFILE, []byte(dataToWrite), 0644)
+		ioutil.WriteFile(HOSTS_FILE, []byte(dataToWrite), 0644)
 	}
 }
 
@@ -194,20 +158,19 @@ func isExist(name string) (folder bool, exist bool) {
 func removeHost(domain string) {
 	fmt.Println("removing virtual host config for " + "http://" + domain)
 	file := domain + ".conf"
-	available := SITESAVAILABLE + file
-	enabled := SITESENABLED + file
-	serverFolder := SERVERFILES + domain
-	hosts, _ := ioutil.ReadFile(HOSTSFILE)
+	available := SITES_AVAILABLE + file
+	enabled := SITES_ENABLED + file
+	serverFolder := SERVER_FILES + domain
+	hosts, _ := ioutil.ReadFile(HOSTS_FILE)
 	hostsN := strings.Split(string(hosts), "\n")
 
 	for index, v := range hostsN {
-		if strings.EqualFold(v, LOCALIP+"\t"+domain) {
+		if strings.EqualFold(v, LOCAL_IP+"\t"+domain) {
 			hostsN = append(hostsN[:index], hostsN[index+1:]...)
 			break
 		}
 	}
-	hosts = []byte(strings.Join(hostsN, "\n"))
-	ioutil.WriteFile(HOSTSFILE, hosts, 0644)
+	ioutil.WriteFile(HOSTS_FILE, []byte(strings.Join(hostsN, "\n")), 0644)
 
 	os.RemoveAll(available)
 	os.RemoveAll(enabled)
